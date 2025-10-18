@@ -2,69 +2,82 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Tamu;
+use App\Models\Status;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class TamuController extends Controller
 {
     public function index()
     {
-        $tamus = Tamu::all();
-        return view('tamu.index', compact('tamus'));
+        $tamus = Tamu::with(['pantita', 'status'])->latest()->get();
+        return view('tamus.index', compact('tamus'));
     }
 
     public function create()
     {
-        return view('tamu.create');
+        $users = User::all();
+        $statuses = Status::all();
+        return view('tamus.create', compact('users', 'statuses'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'no_telp' => 'nullable|string|max:50',
-            'alamat' => 'nullable|string',
-            'instansi' => 'nullable|string|max:255',
-            'tujuan' => 'nullable|string|max:255',
-            'status' => 'required|string'
+        $validated = $request->validate([
+            'tanggal' => 'required|date',
+            'nama_siswa' => 'required|string|max:100',
+            'asal_sekolah' => 'nullable|string|max:100',
+            'nama_orangtua' => 'nullable|string|max:100',
+            'phone_orangtua' => 'nullable|string|max:20',
+            'keterangan' => 'nullable|string',
+            'pantita_id' => 'required|exists:users,user_id',
+            'status_id' => 'required|exists:status,status_id',
         ]);
 
-        Tamu::create($request->only(['nama','email','no_telp','alamat','instansi','tujuan','status']));
+        Tamu::create($validated);
 
-        return redirect()->route('tamu.index')->with('success', 'Tamu berhasil ditambahkan');
+        return redirect()->route('tamus.index')
+            ->with('success', 'Data tamu berhasil ditambahkan!');
     }
 
     public function show(Tamu $tamu)
     {
-        return view('tamu.show', compact('tamu')); // optional, hanya jika butuh halaman detail
+        $tamu->load(['pantita', 'status']);
+        return view('tamus.show', compact('tamu'));
     }
 
     public function edit(Tamu $tamu)
     {
-        return view('tamu.edit', compact('tamu'));
+        $users = User::all();
+        $statuses = Status::all();
+        return view('tamus.edit', compact('tamu', 'users', 'statuses'));
     }
 
     public function update(Request $request, Tamu $tamu)
     {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'no_telp' => 'nullable|string|max:50',
-            'alamat' => 'nullable|string',
-            'instansi' => 'nullable|string|max:255',
-            'tujuan' => 'nullable|string|max:255',
-            'status' => 'required|string'
+        $validated = $request->validate([
+            'tanggal' => 'required|date',
+            'nama_siswa' => 'required|string|max:100',
+            'asal_sekolah' => 'nullable|string|max:100',
+            'nama_orangtua' => 'nullable|string|max:100',
+            'phone_orangtua' => 'nullable|string|max:20',
+            'keterangan' => 'nullable|string',
+            'pantita_id' => 'required|exists:users,user_id',
+            'status_id' => 'required|exists:status,status_id',
         ]);
 
-        $tamu->update($request->only(['nama','email','no_telp','alamat','instansi','tujuan','status']));
+        $tamu->update($validated);
 
-        return redirect()->route('tamu.index')->with('success', 'Data tamu berhasil diupdate');
+        return redirect()->route('tamus.index')
+            ->with('success', 'Data tamu berhasil diperbarui!');
     }
 
     public function destroy(Tamu $tamu)
     {
         $tamu->delete();
-        return redirect()->route('tamu.index')->with('success', 'Tamu berhasil dihapus');
+
+        return redirect()->route('tamus.index')
+            ->with('success', 'Data tamu berhasil dihapus!');
     }
-}
+}   
